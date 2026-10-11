@@ -59,13 +59,22 @@ input,select{flex:1;min-width:0;padding:11px;border-radius:12px;border:1px solid
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
 .bd{border:1px solid var(--bd);border-radius:14px;padding:10px;text-align:center;font-size:13px}
 .chip{border:1px solid var(--bd);background:var(--bg);color:var(--tx);border-radius:16px;padding:7px 11px;font-size:13px;margin:4px 4px 0 0}
-.seg{display:flex;gap:6px;margin:8px 0}.seg button{flex:1;border:1px solid var(--bd);background:var(--card);color:var(--tx);padding:9px;border-radius:14px;font-size:14px}.seg button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.seg{display:flex;gap:6px;margin:8px 0}.seg button{flex:1;border:1px solid var(--bd);background:var(--card);color:var(--tx);padding:9px 4px;border-radius:14px;font-size:13px}.seg button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
 .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;margin-top:6px}
 .cd{position:relative;aspect-ratio:1;border:1px solid var(--bd);border-radius:10px;font-size:13px;display:flex;align-items:center;justify-content:center}
 .cd::before{content:'';position:absolute;inset:0;border-radius:9px;background:var(--ac);opacity:var(--a,0)}
 .cd span{position:relative}.cd.hoje{outline:2px solid var(--tx)}.cd.fut{opacity:.35}.cd.hi span{color:#fff}
 .rg{animation:rg .9s ease-out}@keyframes rg{from{stroke-dashoffset:var(--c)}}
 .lg{margin:6px 0;font-size:14px}
+.jr2{display:flex;gap:12px;align-items:center;position:relative;min-height:70px}
+.jr2::after{content:'';position:absolute;left:23px;top:50%;bottom:-50%;width:4px;margin-left:-2px;border-radius:2px;background:repeating-linear-gradient(var(--bd) 0 6px,transparent 6px 11px);z-index:0}
+.jr2.last::after{display:none}
+.jr2.sok::after{background:linear-gradient(var(--ac),var(--ac2))}
+.jn2{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;flex:none;background:var(--bg);border:3px solid var(--bd);position:relative;z-index:1}
+.jn2.ok{background:linear-gradient(135deg,var(--ac),var(--ac2));border-color:transparent;box-shadow:0 4px 12px rgba(0,0,0,.18)}
+.jn2.lock{filter:grayscale(1);opacity:.55}
+.jn2.me{background:var(--card);border-color:var(--ac);box-shadow:0 0 0 5px var(--tint,rgba(0,0,0,.06));overflow:visible}
+.jn2.me .phx{animation:bob 2.2s ease-in-out infinite}
 .jr{display:flex;gap:10px;align-items:center;padding:7px 0;position:relative}
 .jn{width:16px;height:16px;border-radius:50%;border:3px solid var(--bd);flex:none;background:var(--card)}.jn.ok{background:var(--ac);border-color:var(--ac)}
 .jr:not(:last-child)::after{content:'';position:absolute;left:7px;top:28px;bottom:-8px;width:2px;background:var(--bd)}
@@ -76,7 +85,6 @@ input,select{flex:1;min-width:0;padding:11px;border-radius:12px;border:1px solid
 </style></style>
 </head>
 <body>
-<div class="row"><span id="st" class="mu" style="flex:1"></span><button class="btn" id="sb" onclick="sync(true)">Ligar ao Google Drive</button></div>
 <nav id="nav"></nav>
 <div id="v"></div>
 <div id="sc" style="display:none;position:fixed;inset:0;background:#000;z-index:9;padding:calc(12px + env(safe-area-inset-top,0px)) 12px calc(12px + env(safe-area-inset-bottom,0px));overflow:auto">
@@ -256,7 +264,6 @@ function lembr(){
   if(li){var n=dif(t,addDays(li.d,7));if(n==0)r.push('💉 Hoje é o dia previsto da injeção.');else if(n==-1)r.push('💉 A injeção está prevista para amanhã.');else if(n>0)r.push('💉 Passaram '+n+' dia(s) da data prevista da injeção.')}
   var cu=S.water[t]||0;
   if(new Date().getHours()>=15&&cu<S.cfg.waterMl)r.push('💧 Faltam '+fl(S.cfg.waterMl-cu)+' L de água.');
-  if(S.w.length){var be=S.lastExp||S.w[0].d;if(dif(t,be)>=7)r.push('💾 Faz uma cópia de segurança: Mais → Metas → Exportar.')}
   var sx=stall();if(sx)r.push('📊 '+sx);
   return r}
 function dnav(){return '<div class="row"><button class="x" onclick="dd(-1)">‹</button><input type="date" id="dt" value="'+cur+'" max="'+td()+'" onchange="cur=this.value||td();draw()" style="text-align:center"><button class="x" onclick="dd(1)">›</button></div>'}
@@ -518,12 +525,24 @@ function journey(){
 function journeyCard(C){
   var j=journey();
   if(!j)return '<div class="card"><b>🗺️ A tua jornada</b><div class="mu">Regista o teu peso e define a meta em Mais → Metas para veres o mapa.</div></div>';
-  var nx=j.stops.find(function(x){return !x.ok}),lr=-1;
+  var nx=j.stops.find(function(x){return !x.ok}),lr=-1,total=Math.abs(j.s-j.g)||1,got=Math.abs(j.s-j.best),pct=Math.min(100,Math.max(0,got/total*100));
   j.stops.forEach(function(x,i){if(x.ok)lr=i});
-  var mas=phx(stage(C.lv),{size:26,u:'j'}),o='<div class="card"><b>🗺️ A tua jornada</b><div class="mu">'+j.s+' kg → '+j.g+' kg · já '+Math.abs(j.s-j.best).toFixed(1)+' kg conquistados'+(nx?' · próxima paragem '+nx.v+' kg':' · chegaste!')+' · +50 XP por paragem</div><div style="margin-top:8px">';
-  for(var i=j.stops.length-1;i>=0;i--){var x=j.stops[i];o+='<div class="jr"><span class="jn'+(x.ok?' ok':'')+'"></span><div><b>'+x.v+' kg</b> <span class="mu">'+(x.ok?x.p:'🔒 '+x.p.replace(/^\S+\s/,''))+'</span>'+(i==lr?' <span style="display:inline-block;vertical-align:middle">'+mas+'</span> <span class="mu">tu: '+j.cur+' kg</span>':'')+'</div></div>'}
-  o+='<div class="jr"><span class="jn ok"></span><div><b>'+j.s+' kg</b> <span class="mu">Início da jornada</span>'+(lr<0?' <span style="display:inline-block;vertical-align:middle">'+mas+'</span> <span class="mu">tu: '+j.cur+' kg</span>':'')+'</div></div></div></div>';
-  return o}
+  var f1=function(v){return (Math.round(v*10)/10).toString()};
+  var R=[{k:'start',ok:true,e:'🚩',t:f1(j.s)+' kg',s:'Início da jornada'}];
+  j.stops.forEach(function(x,i){
+    var last=i==j.stops.length-1,sp=x.p.replace(/^\S+\s/,''),em=x.p.split(' ')[0];
+    R.push({k:last?'goal':'stop',ok:x.ok,e:em,t:f1(x.v)+' kg',s:last?(x.ok?'Meta alcançada!':'A tua meta'):sp,d:x.ok?'✓ conquistado':(x===nx?'Próxima paragem · faltam '+f1(Math.abs(j.cur-x.v))+' kg':'faltam '+f1(Math.abs(j.cur-x.v))+' kg')})});
+  var at=lr+1;  // posição da fénix: depois da última paragem conquistada (a 0 é o início)
+  R.splice(at+1,0,{k:'me',ok:false,t:'Tu estás aqui',s:f1(j.cur)+' kg',d:nx?'Faltam '+f1(Math.abs(j.cur-nx.v))+' kg para a próxima paragem':'Chegaste à meta! 🎉'});
+  var o='<div class="card"><b>🗺️ A tua jornada</b>'
+   +'<div style="display:flex;gap:14px;align-items:flex-end;margin:8px 0 2px"><div><div class="big">'+f1(got)+' kg</div><div class="mu">conquistados</div></div><div style="flex:1"><div class="bar"><i style="width:'+pct.toFixed(0)+'%"></i></div><div class="mu">'+f1(j.s)+' → '+f1(j.g)+' kg · faltam '+f1(Math.abs(j.cur-j.g))+' kg</div></div></div>'
+   +'<div class="mu">+50 XP por paragem</div><div style="margin-top:10px">';
+  R.forEach(function(r,i){
+    var nextR=R[i+1],sok=r.ok&&nextR&&(nextR.ok||nextR.k=='me'),cls='jr2'+(i==R.length-1?' last':'')+(sok?' sok':''),nd;
+    if(r.k=='me')nd='<div class="jn2 me">'+phx(stage(C.lv),{size:30,mood:'happy',u:'jm'})+'</div>';
+    else nd='<div class="jn2'+(r.ok?' ok':' lock')+'">'+r.e+'</div>';
+    o+='<div class="'+cls+'">'+nd+'<div style="flex:1"><div><b>'+r.t+'</b> <span class="mu">'+r.s+'</span></div>'+(r.d?'<div class="mu" style="'+(r.d.indexOf('Próxima')==0?'color:var(--ac);font-weight:600':'')+'">'+r.d+'</div>':'')+'</div></div>'});
+  return o+'</div></div>'}
 function protHelp(d){
   var c=S.cfg;
   if(!c.prot)return '<div class="card mu">🥩 Define a meta de proteína em Mais → Metas e eu sugiro o que comer.</div>';
@@ -535,8 +554,8 @@ function protHelp(d){
   o='<div class="card"><b>🥩 Faltam '+Math.round(rem)+' g de proteína</b>';
   if(!a.length)return o+'<div class="mu">Regista alimentos ricos em proteína (iogurte grego, ovos, frango…) e passo a sugerir os mais eficientes.</div></div>';
   return o+'<div class="mu">Os mais eficientes que já registaste'+(kr!==null?' (restam '+Math.max(0,Math.round(kr))+' kcal)':'')+':</div>'+a.map(function(x){return '<div class="li"><span>'+esc(x.n)+'</span><span>+'+x.prot+' g · '+x.kcal+' kcal</span></div>'}).join('')+'</div>'}
-function seg(){return '<div class="seg">'+[['🏃','Treino'],['❤️','Saúde'],['🎯','Metas']].map(function(t,i){return '<button class="'+(i==sub?'on':'')+'" onclick="sub='+i+';draw()">'+t[0]+' '+t[1]+'</button>'}).join('')+'</div>'}
-function vMais(C){return seg()+[vTreino,vSaude,vMetas][sub](C)}
+function seg(){return '<div class="seg">'+[['🏃','Treino'],['❤️','Saúde'],['🎯','Metas'],['👤','Perfil']].map(function(t,i){return '<button class="'+(i==sub?'on':'')+'" onclick="sub='+i+';draw()">'+t[0]+' '+t[1]+'</button>'}).join('')+'</div>'}
+function vMais(C){return seg()+[vTreino,vSaude,vMetas,vPerfil][sub](C)}
 
 /* ---------- primeira utilização ---------- */
 var OB=null;
@@ -723,8 +742,7 @@ function vPremios(C){
    +'<div class="card mu">Um dia conta para a sequência quando cumpres 2 ou mais das 4 missões. A dieta conta quando ficas entre 70% e 100% da tua meta de kcal. O treino é um bónus de XP.</div>'}
 function vMetas(){
   var c=S.cfg,p=S.prof,r=calcObj();
-  var o='<div class="card"><b>A tua casa</b><div class="row">'+Object.keys(HS).map(function(k){return '<button class="btn" style="flex:1;background:'+HS[k][2]+';'+(c.house==k?'':'opacity:.4')+'" onclick="setHouse(\''+k+'\')">'+HS[k][0]+'<br><small>'+HS[k][1]+'</small></button>'}).join('')+'</div></div>';
-  o+=themeCard();
+  var o='';
   o+='<div class="card"><b>Calculadora do teu objetivo</b><div class="mu">Estimativa de calorias, proteína e água por dia.</div>'
    +'<div class="row"><select id="ps">'+opt([['','Sexo (para a fórmula)'],['m','Masculino'],['f','Feminino']],p.sex)+'</select><input id="pa" inputmode="numeric" placeholder="Idade" value="'+(p.age||'')+'" style="max-width:90px"><input id="ph" inputmode="numeric" placeholder="Altura cm" value="'+(p.h||'')+'" style="max-width:110px"></div>'
    +'<div class="row"><select id="pt">'+opt([[1.2,'Pouco ativo (sem treino)'],[1.375,'Ligeiro (1-3 treinos/sem.)'],[1.55,'Moderado (3-5 treinos/sem.)'],[1.725,'Muito ativo (6-7 treinos/sem.)']],p.act)+'</select></div>'
@@ -740,8 +758,15 @@ function vMetas(){
   o+='<div class="card"><b>Meta de peso</b><div class="row"><input id="goal" inputmode="decimal" placeholder="kg" value="'+(S.goal||'')+'"><button class="btn" onclick="setGoal()">Definir</button></div>';
   if(S.goal&&l&&w.length){var st=w[0].kg,tot=Math.abs(st-S.goal)||1,done=Math.min(100,Math.max(0,Math.abs(st-l)/tot*100));o+='<div class="bar"><i style="width:'+done.toFixed(0)+'%"></i></div><div class="mu">Faltam '+Math.abs(l-S.goal).toFixed(1)+' kg para '+S.goal+' kg ('+done.toFixed(0)+'%)</div>'}
   o+=idealHelp(l);
-  o+='</div><div class="card"><b>Dados</b><div class="mu">Guarda uma cópia ou restaura de um ficheiro.</div><div class="row"><button class="btn" onclick="exportar()">Exportar</button><input type="file" accept=".json,application/json" onchange="importar(this)"></div><div class="row"><button class="btn2" style="flex:1" onclick="rpShow()">📄 Relatório para consultas</button></div><div class="row"><button class="btn2" style="flex:1" onclick="obShow()">🧭 Refazer a configuração inicial</button></div><div class="row"><button class="btn2" style="flex:1" onclick="driveOff()">☁️ Desligar da Google Drive</button></div><div style="text-align:center;margin-top:6px"><a href="privacidade.html" target="_blank" class="mu">Política de privacidade</a></div></div>';
+  o+='</div>';
   return o}
+function vPerfil(){
+  var c=S.cfg;
+  var o='<div class="card"><b>A tua casa</b><div class="row">'+Object.keys(HS).map(function(k){return '<button class="btn" style="flex:1;background:'+HS[k][2]+';'+(c.house==k?'':'opacity:.4')+'" onclick="setHouse(\''+k+'\')">'+HS[k][0]+'<br><small>'+HS[k][1]+'</small></button>'}).join('')+'</div></div>';
+  o+=themeCard();
+  o+='<div class="card"><b>Dados</b>'+syncRow()+'<div class="mu">Guarda uma cópia ou restaura de um ficheiro.</div><div class="row"><button class="btn" onclick="exportar()">Exportar</button><input type="file" accept=".json,application/json" onchange="importar(this)"></div><div class="row"><button class="btn2" style="flex:1" onclick="rpShow()">📄 Relatório para consultas</button></div><div class="row"><button class="btn2" style="flex:1" onclick="obShow()">🧭 Refazer a configuração inicial</button></div><div class="row"><button class="btn2" style="flex:1" onclick="driveOff()">☁️ Desligar da Google Drive</button></div><div style="text-align:center;margin-top:6px"><a href="privacidade.html" target="_blank" class="mu">Política de privacidade</a></div></div>';
+  return o}
+
 var MN=['Cintura','Abdómen','Anca'],MC=['#e8590c','#1971c2','#7048e8'];
 var TB=[['🏠','Hoje'],['🍽️','Comida'],['⚖️','Corpo'],['🏆','Progresso'],['⚙️','Mais']];
 function nav(){$('nav').innerHTML=TB.map(function(t,i){return '<button class="'+(i==tab?'on':'')+'" onclick="tab='+i+';draw()">'+t[0]+'<small>'+t[1]+'</small></button>'}).join('')}
@@ -763,10 +788,14 @@ function draw(){
 var CLIENT_ID=window.CP_CLIENT_ID||'';
 var SCOPE='https://www.googleapis.com/auth/drive.appdata',FN='controlo-peso.json';
 var tok=null,tokExp=0,tc=null,fid=null,timer=null,busy=false;
-function stat(t){var e=$('st');if(e)e.textContent=t}
+var syncMsg='';
+function stat(t){syncMsg=t;var e=$('st');if(e)e.textContent=t}
+function driveOn(){try{return !!localStorage.getItem('cp_drive')}catch(e){return false}}
+function syncRow(){if(window.__PREVIEW)return '';var on=driveOn();return '<div class="row"><span id="st" class="mu" style="flex:1">'+esc(syncMsg||(on?'Toca em Sincronizar para atualizar':'Dados só neste telemóvel'))+'</span><button class="btn" id="sb" onclick="sync(true)">'+(on?'Sincronizar':'Ligar ao Google Drive')+'</button></div>'}
 function getTok(){return new Promise(function(res,rej){
   if(!window.google||!google.accounts)return rej(new Error('biblioteca Google não carregou (sem ligação?)'));
-  if(!CLIENT_ID||CLIENT_ID.indexOf('COLOCA')==0)return rej(new Error('falta configurar o CLIENT_ID'));
+  if(!CLIENT_ID)return rej(new Error('o config.js não foi carregado: fecha e volta a abrir a app'));
+  if(CLIENT_ID.indexOf('COLOCA')==0)return rej(new Error('o config.js ainda tem o ID de exemplo: fecha e volta a abrir a app'));
   if(!tc)tc=google.accounts.oauth2.initTokenClient({client_id:CLIENT_ID,scope:SCOPE,
     callback:function(r){if(r.error)return tc._rej(new Error(r.error));tok=r.access_token;tokExp=Date.now()+r.expires_in*1000;try{localStorage.setItem('cp_drive','1')}catch(e){}tc._res(tok)},
     error_callback:function(e){tc._rej(new Error(e.type||'login cancelado'))}});
@@ -802,7 +831,7 @@ function sync(interactive){
       }else if((R.t||0)>(S.t||0)){load(R);store();lastXp=calc().xp;draw()}
       else if((R.t||0)<(S.t||0))return push();
       remember()})})
-  .then(function(){stat('Sincronizado às '+new Date().toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'}));var b=$('sb');if(b)b.textContent='Sincronizar'})
+  .then(function(){S.lastExp=td();store();stat('Sincronizado às '+new Date().toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'}));var b=$('sb');if(b)b.textContent='Sincronizar'})
   .catch(function(e){stat('Sem sincronização: '+e.message)})
   .then(function(){busy=false})}
 function driveOff(){
@@ -811,7 +840,6 @@ function driveOff(){
   try{localStorage.removeItem('cp_drive');localStorage.removeItem('cp_fid')}catch(e){}
   stat('Dados só neste telemóvel');var b=$('sb');if(b)b.textContent='Ligar ao Google Drive';
   toast('Drive desligada. Os dados continuam neste telemóvel.')}
-try{if(localStorage.getItem('cp_drive')){$('sb').textContent='Sincronizar';stat('Toca em Sincronizar para atualizar')}else stat('Dados só neste telemóvel')}catch(e){stat('Dados só neste telemóvel')}
 if('serviceWorker' in navigator)window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})});
 lastXp=calc().xp;
 draw();
