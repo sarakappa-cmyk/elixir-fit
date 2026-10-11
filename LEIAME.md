@@ -29,3 +29,11 @@ Aplicação que se instala no iPhone e guarda os dados na Google Drive de cada u
 - Atualizações: normalmente só se substitui o `index.html`. O `config.js` nunca muda.
 - Código de barras: usa a câmara (pede permissão no iPhone) e consulta a base Open Food Facts, por isso precisa de internet. Se o produto não existir, preenches à mão e fica guardado.
 - Fotos de progresso: ficam só no telemóvel (não vão para a Drive nem para a exportação).
+
+## Vários utilizadores com a Google Drive de cada um (resumo)
+1. Cria o projeto no Google Cloud e ativa a Google Drive API.
+2. Em Google Auth Platform: Branding (nome Elixir Fit, email de apoio, link da política de privacidade), Audience = Externo e **Publish app** (Em produção), Data Access = só `drive.appdata`.
+3. Em Clients cria um ID de cliente do tipo Aplicação Web, com a origem `https://O-TEU-UTILIZADOR.github.io`.
+4. Cola o ID em `config.js` e faz commit.
+5. Em `privacidade.html` troca `O-TEU-EMAIL` pelo teu email.
+Cada pessoa abre o mesmo endereço, instala a app no seu telemóvel e liga a sua conta Google. Os dados ficam na pasta escondida da app, na Drive dela.

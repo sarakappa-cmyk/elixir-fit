@@ -740,7 +740,7 @@ function vMetas(){
   o+='<div class="card"><b>Meta de peso</b><div class="row"><input id="goal" inputmode="decimal" placeholder="kg" value="'+(S.goal||'')+'"><button class="btn" onclick="setGoal()">Definir</button></div>';
   if(S.goal&&l&&w.length){var st=w[0].kg,tot=Math.abs(st-S.goal)||1,done=Math.min(100,Math.max(0,Math.abs(st-l)/tot*100));o+='<div class="bar"><i style="width:'+done.toFixed(0)+'%"></i></div><div class="mu">Faltam '+Math.abs(l-S.goal).toFixed(1)+' kg para '+S.goal+' kg ('+done.toFixed(0)+'%)</div>'}
   o+=idealHelp(l);
-  o+='</div><div class="card"><b>Dados</b><div class="mu">Guarda uma cópia ou restaura de um ficheiro.</div><div class="row"><button class="btn" onclick="exportar()">Exportar</button><input type="file" accept=".json,application/json" onchange="importar(this)"></div><div class="row"><button class="btn2" style="flex:1" onclick="rpShow()">📄 Relatório para consultas</button></div><div class="row"><button class="btn2" style="flex:1" onclick="obShow()">🧭 Refazer a configuração inicial</button></div></div>';
+  o+='</div><div class="card"><b>Dados</b><div class="mu">Guarda uma cópia ou restaura de um ficheiro.</div><div class="row"><button class="btn" onclick="exportar()">Exportar</button><input type="file" accept=".json,application/json" onchange="importar(this)"></div><div class="row"><button class="btn2" style="flex:1" onclick="rpShow()">📄 Relatório para consultas</button></div><div class="row"><button class="btn2" style="flex:1" onclick="obShow()">🧭 Refazer a configuração inicial</button></div><div class="row"><button class="btn2" style="flex:1" onclick="driveOff()">☁️ Desligar da Google Drive</button></div><div style="text-align:center;margin-top:6px"><a href="privacidade.html" target="_blank" class="mu">Política de privacidade</a></div></div>';
   return o}
 var MN=['Cintura','Abdómen','Anca'],MC=['#e8590c','#1971c2','#7048e8'];
 var TB=[['🏠','Hoje'],['🍽️','Comida'],['⚖️','Corpo'],['🏆','Progresso'],['⚙️','Mais']];
@@ -783,18 +783,34 @@ function push(){var body=JSON.stringify(S);
   return api('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{method:'POST',headers:{'Content-Type':'multipart/related; boundary='+b},
     body:'--'+b+'\r\nContent-Type: application/json\r\n\r\n'+meta+'\r\n--'+b+'\r\nContent-Type: application/json\r\n\r\n'+body+'\r\n--'+b+'--'})
     .then(function(r){return r.json()}).then(function(j){fid=j.id})}
+function hasData(o){return !!(o&&((o.w&&o.w.length)||(o.meals&&o.meals.length)||(o.water&&Object.keys(o.water).length)))}
+function remember(){try{localStorage.setItem('cp_fid',fid||'')}catch(e){}}
 function sync(interactive){
   if(busy)return;busy=true;stat('A sincronizar…');
-  var ok=tok&&Date.now()<tokExp-60000;
+  var ok=tok&&Date.now()<tokExp-60000,known=null;try{known=localStorage.getItem('cp_fid')}catch(e){}
   (ok?Promise.resolve(tok):(interactive?getTok():Promise.reject(new Error('sem sessão'))))
   .then(findF).then(function(){
-    if(!fid)return push();
+    var hasLocal=hasData(S);
+    if(!fid){
+      if(known&&hasLocal&&!confirm('Parece que entraste com outra conta Google. Queres copiar os dados deste telemóvel para ela?'))throw new Error('cancelado');
+      return push().then(remember)}
     return api('https://www.googleapis.com/drive/v3/files/'+fid+'?alt=media').then(function(r){return r.json()}).then(function(R){
-      if((R.t||0)>(S.t||0)){load(R);store();lastXp=calc().xp;draw()}
-      else if((R.t||0)<(S.t||0))return push()})})
-  .then(function(){stat('Sincronizado às '+new Date().toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'}));$('sb').textContent='Sincronizar'})
+      var other=known&&known!==fid,first=!known;
+      if(hasLocal&&hasData(R)&&(other||first)){
+        if(confirm('Esta conta Google já tem dados guardados.\n\nOK = usar os dados da Drive (substitui os deste telemóvel).\nCancelar = manter os deste telemóvel (substitui os da Drive).')){load(R);store();lastXp=calc().xp;draw()}
+        else return push().then(remember);
+      }else if((R.t||0)>(S.t||0)){load(R);store();lastXp=calc().xp;draw()}
+      else if((R.t||0)<(S.t||0))return push();
+      remember()})})
+  .then(function(){stat('Sincronizado às '+new Date().toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'}));var b=$('sb');if(b)b.textContent='Sincronizar'})
   .catch(function(e){stat('Sem sincronização: '+e.message)})
   .then(function(){busy=false})}
+function driveOff(){
+  try{if(tok&&window.google&&google.accounts)google.accounts.oauth2.revoke(tok,function(){})}catch(e){}
+  tok=null;tokExp=0;fid=null;tc=null;
+  try{localStorage.removeItem('cp_drive');localStorage.removeItem('cp_fid')}catch(e){}
+  stat('Dados só neste telemóvel');var b=$('sb');if(b)b.textContent='Ligar ao Google Drive';
+  toast('Drive desligada. Os dados continuam neste telemóvel.')}
 try{if(localStorage.getItem('cp_drive')){$('sb').textContent='Sincronizar';stat('Toca em Sincronizar para atualizar')}else stat('Dados só neste telemóvel')}catch(e){stat('Dados só neste telemóvel')}
 if('serviceWorker' in navigator)window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})});
 lastXp=calc().xp;
